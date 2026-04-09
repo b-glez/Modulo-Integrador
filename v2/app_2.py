@@ -169,14 +169,25 @@ def get_insights(recipe: dict, client: OpenAI, user_ingredients: list) -> Receta
         '}'
     )
     prompt = (
-        "Eres un chef experto en cocina mexicana con enfoque en Zero Waste (cero desperdicio). "
-        "Analiza la receta considerando los ingredientes que el usuario tiene disponibles. "
-        "Para 'que_hacer_con_sobras' sugiere brevemente cómo usar los ingredientes del usuario "
-        "que NO usa esta receta.\n\n"        
-        "Responde EXACTAMENTE con este JSON (campos en español, nombres exactos):\n\n"
-        + json_template
-        + "\n\nReceta a analizar:\n"
-        + recipe_text 
+    "Eres un chef experto en cocina mexicana con enfoque en Zero Waste (cero desperdicio). "
+    "Analiza la receta considerando los ingredientes que el usuario tiene disponibles.\n\n"
+    
+    "Tu objetivo es:\n"
+    "- Adaptar la receta si faltan o sobran ingredientes.\n"
+    "- Sugerir sustituciones si es necesario.\n"
+    "- Minimizar el desperdicio.\n\n"
+    
+    "Devuelve la información en formato JSON en español, usando esta estructura como guía:\n"
+    f"{json_template}\n\n"
+    
+    "Instrucciones importantes:\n"
+    "- Mantén los nombres de los campos.\n"
+    "- Puedes enriquecer las descripciones si aporta valor.\n"
+    "- En 'que_hacer_con_sobras', sugiere formas prácticas de usar ingredientes que no se utilicen.\n"
+    "- Si no aplica algún campo, usa null o una cadena vacía.\n\n"
+    
+    "Receta a analizar:\n"
+    f"{recipe_text}"
     )
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
