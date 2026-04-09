@@ -172,7 +172,11 @@ def get_insights(recipe: dict, client: OpenAI, user_ingredients: list) -> Receta
         "Eres un chef experto en cocina mexicana con enfoque en Zero Waste (cero desperdicio). "
         "Analiza la receta considerando los ingredientes que el usuario tiene disponibles. "
         "Para 'que_hacer_con_sobras' sugiere brevemente cómo usar los ingredientes del usuario "
-        "que NO usa esta receta.\n\n"
+        "que NO usa esta receta.\n\n"        
+        "Responde EXACTAMENTE con este JSON (campos en español, nombres exactos):\n\n"
+        + json_template
+        + "\n\nReceta a analizar:\n"
+        + recipe_text 
     )
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
