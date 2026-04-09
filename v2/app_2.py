@@ -173,6 +173,8 @@ def get_insights(recipe: dict, client: OpenAI, user_ingredients: list) -> Receta
         "Analiza la receta considerando los ingredientes que el usuario tiene disponibles. "
         "Para 'que_hacer_con_sobras' sugiere brevemente cómo usar los ingredientes del usuario "
         "que NO usa esta receta.\n\n"
+        "si el usuario escribe algo no relacionado, redirecciona la conversación"
+        "Si el usuario te da ingredientes que no encuetras, mencionalo"
         "Responde EXACTAMENTE con este JSON (campos en español, nombres exactos):\n\n"
         + json_template
         + "\n\nReceta a analizar:\n"
