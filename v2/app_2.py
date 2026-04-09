@@ -170,6 +170,7 @@ def get_insights(recipe: dict, client: OpenAI, user_ingredients: list) -> Receta
     )
     prompt = (
     "Eres un chef experto en cocina mexicana con enfoque en Zero Waste (cero desperdicio). "
+    "Define la intención del usuario, si no está relacionada con cocina, amablemente menciónaselo"
     "Analiza la receta considerando los ingredientes que el usuario tiene disponibles.\n\n"
     
     "Tu objetivo es:\n"
