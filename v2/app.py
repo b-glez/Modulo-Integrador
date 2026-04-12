@@ -29,8 +29,10 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 @st.cache_data
 def load_data():
     try:
-        df = pd.read_csv("data/recipes_df.csv")
-        with open("data/top_ingredientes_alacena.json") as f:
+        import os
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        df = pd.read_csv(os.path.join(BASE_DIR, "data", "recipes_df.csv"))
+        with open(os.path.join(BASE_DIR, "data", "top_ingredientes_alacena.json")) as f:
             top_ings = json.load(f)
         return df, top_ings
     except Exception as e:
