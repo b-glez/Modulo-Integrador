@@ -180,16 +180,24 @@ if not st.session_state.onboarding_done:
         alacena_sel.extend(seleccionados)
 
     st.markdown('<div class="step-label">¿Qué estás preparando?</div>', unsafe_allow_html=True)
-    momento_cols = st.columns(4)
-    for i, (m, emoji) in enumerate(MOMENTOS.items()):
-        if momento_cols[i].button(f"{emoji} {m}", key=f"m_{m}", use_container_width=True):
-            st.session_state.momento = m
-
+    momento_sel = st.radio(
+        "momento",
+        options=[f"{emoji} {m}" for m, emoji in MOMENTOS.items()],
+        horizontal=True,
+        label_visibility="collapsed",
+        key="radio_momento"
+    )
+    st.session_state.momento = momento_sel.split(" ", 1)[1]
+    
     st.markdown('<div class="step-label">¿Cómo estás ahorita?</div>', unsafe_allow_html=True)
-    energia_cols = st.columns(4)
-    for i, (modo, info) in enumerate(MODOS_ENERGIA.items()):
-        if energia_cols[i].button(f"{info['emoji']} {modo}", key=f"e_{modo}", use_container_width=True):
-            st.session_state.modo_energia = modo
+    energia_sel = st.radio(
+        "energia",
+        options=[f"{info['emoji']} {modo}" for modo, info in MODOS_ENERGIA.items()],
+        horizontal=True,
+        label_visibility="collapsed",
+        key="radio_energia"
+    )
+    st.session_state.modo_energia = energia_sel.split(" ", 1)[1]
 
     st.markdown('<div class="step-label">¿Qué tienes disponible?</div>', unsafe_allow_html=True)
     ing_input = st.text_area("ing", placeholder="ej. pollo, jitomate, cebolla, chile poblano, crema...",
