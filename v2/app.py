@@ -170,8 +170,14 @@ if not st.session_state.onboarding_done:
 
     alacena_sel = []
     for cat, items in ALACENA_CATEGORIAS.items():
-        if st.checkbox(cat, key=f"cb_{cat}"):
-            alacena_sel.extend(items)
+        emoji = cat.split()[0]
+        nombre = ' '.join(cat.split()[1:])
+        seleccionados = st.multiselect(
+            f"{emoji} {nombre}",
+            options=items,
+            key=f"ms_{cat}"
+        )
+        alacena_sel.extend(seleccionados)
 
     st.markdown('<div class="step-label">¿Qué estás preparando?</div>', unsafe_allow_html=True)
     momento_cols = st.columns(4)
