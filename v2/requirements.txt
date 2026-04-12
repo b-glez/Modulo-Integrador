@@ -1,5 +1,4 @@
 streamlit
 openai
-requests
-pydantic
-python-dotenv
+pandas
+numpy
