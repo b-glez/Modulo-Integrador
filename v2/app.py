@@ -104,7 +104,7 @@ MOMENTOS = {"Desayuno": "🌅", "Comida": "☀️", "Cena": "🌙", "Snack": "�
 defaults = {
     "onboarding_done": False, "alacena_base": [], "modo_energia": "Normal",
     "momento": "Comida", "messages": [], "ingredientes_frescos": "",
-    "perfil_data": None
+    "perfil_data": None, "congelados": []
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -146,8 +146,9 @@ CÓMO RESPONDER:
 5. Sé preciso con tipos de ingredientes — harina de trigo es diferente a masa de maíz,
    frijoles crudos son diferentes a frijoles cocidos, pollo crudo diferente a cocido.
    Si el tipo importa para la receta, pregunta antes de sugerirla.
-6. Si una receta requiere un ingrediente en estado específico (cocido, descongelado, etc.),
-   pregunta en qué estado lo tiene el usuario O incluye instrucciones desde ese paso.
+6. Asume SIEMPRE que granos y legumbres están crudos (arroz, frijoles, lentejas, 
+   garbanzos, quinoa, avena). Incluye siempre el paso de cocción o remojo 
+   correspondiente en la receta.
 7. Menciona sutilmente si la receta es balanceada cuando aplique.
 8. Siempre incluye qué hacer con lo que sobre.
 9. Tono según estado: con energía = entusiasta, cansada = directo y reconfortante,
@@ -185,6 +186,11 @@ if not st.session_state.onboarding_done:
         )
         alacena_sel.extend(seleccionados)
 
+    st.markdown('<div class="step-label">🧊 ¿Tienes algo en el congelador?</div>', unsafe_allow_html=True)
+    congelados_opciones = ["pollo", "carne de res", "camarones", "pescado", "verduras mixtas", "elote", "chiles", "caldo"]
+    congelados_sel = st.multiselect("congelados", options=congelados_opciones,
+        placeholder="Selecciona lo que tienes congelado...", label_visibility="collapsed", key="ms_congelados")
+    
     st.markdown('<div class="step-label">¿Qué estás preparando?</div>', unsafe_allow_html=True)
     momento_sel = st.radio(
         "momento",
