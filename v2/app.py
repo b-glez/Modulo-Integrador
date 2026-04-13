@@ -232,7 +232,11 @@ if not st.session_state.onboarding_done:
             st.session_state.onboarding_done = True
 
             # Ejecutar tool del EDA
-            user_ings = [i.strip() for i in ing_input.split(',')]
+            user_ings = (
+                [i.strip() for i in ing_input.split(',')]
+                + alacena_sel
+                + congelados_sel
+            )
             perfil = get_perfil_alacena(user_ings)
             st.session_state.perfil_data = perfil
 
