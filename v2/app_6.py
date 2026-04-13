@@ -24,36 +24,16 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 
 # ── Cargar datos del EDA ──────────────────────────────────────────────────────
 @st.cache_data
-@st.cache_data
 def load_data():
     try:
-        # Intentar diferentes paths
         import os
-        possible_paths = [
-            "data/recipes_df.csv",
-            "v2/data/recipes_df.csv", 
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "recipes_df.csv")
-        ]
-        df = None
-        for path in possible_paths:
-            if os.path.exists(path):
-                df = pd.read_csv(path)
-                break
-        
-        possible_json = [
-            "data/top_ingredientes_alacena.json",
-            "v2/data/top_ingredientes_alacena.json",
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "top_ingredientes_alacena.json")
-        ]
-        top_ings = []
-        for path in possible_json:
-            if os.path.exists(path):
-                with open(path) as f:
-                    top_ings = json.load(f)
-                break
-        
+        base = os.path.dirname(os.path.abspath(__file__))
+        df = pd.read_csv(os.path.join(base, "data", "recipes_df.csv"))
+        with open(os.path.join(base, "data", "top_ingredientes_alacena.json")) as f:
+            top_ings = json.load(f)
         return df, top_ings
     except Exception as e:
+        st.sidebar.error(f"Error cargando datos: {e}")
         return None, []
 
 recipes_df, top_ingredientes = load_data()
