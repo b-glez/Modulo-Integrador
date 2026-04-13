@@ -195,7 +195,7 @@ if not st.session_state.onboarding_done:
         alacena_sel.extend(seleccionados)
 
     st.markdown('<div class="step-label">🧊 ¿Tienes algo en el congelador?</div>', unsafe_allow_html=True)
-    congelados_opciones = ["pollo", "carne de res", "camarones", "pescado", "verduras mixtas", "elote", "chiles", "caldo"]
+    congelados_opciones = ["pollo", "carne de res", "camarones", "pescado", "verduras mixtas", "caldo"]
     congelados_sel = st.multiselect("congelados", options=congelados_opciones,
         placeholder="Selecciona lo que tienes congelado...", label_visibility="collapsed", key="ms_congelados")
     
