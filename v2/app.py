@@ -114,6 +114,7 @@ for k, v in defaults.items():
 def build_system_prompt(perfil_data=None):
     modo = MODOS_ENERGIA[st.session_state.modo_energia]
     alacena_str = f"\nTambién tiene en alacena: {', '.join(st.session_state.alacena_base)}." if st.session_state.alacena_base else ""
+    congelados_str = f"\nEn el congelador (congelados): {', '.join(st.session_state.get('congelados', []))}." if st.session_state.get('congelados') else ""
 
     perfil_str = ""
     if perfil_data and "error" not in perfil_data:
@@ -135,7 +136,7 @@ CONTEXTO DEL USUARIO:
 - Momento: {st.session_state.momento}
 - Estado: {st.session_state.modo_energia} — {modo['desc']}
 - Tiempo máximo sugerido: {modo['tiempo']} minutos
-- Ingredientes frescos: {st.session_state.ingredientes_frescos}{alacena_str}
+- Ingredientes frescos: {st.session_state.ingredientes_frescos}{alacena_str}{congelados_str}
 {perfil_str}
 
 CÓMO RESPONDER:
