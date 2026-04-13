@@ -24,15 +24,36 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 
 # ── Cargar datos del EDA ──────────────────────────────────────────────────────
 @st.cache_data
+@st.cache_data
 def load_data():
     try:
+        # Intentar diferentes paths
         import os
-        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-        df = pd.read_csv(os.path.join(BASE_DIR, "data", "recipes_df.csv"))
-        with open(os.path.join(BASE_DIR, "data", "top_ingredientes_alacena.json")) as f:
-            top_ings = json.load(f)
+        possible_paths = [
+            "data/recipes_df.csv",
+            "v2/data/recipes_df.csv", 
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "recipes_df.csv")
+        ]
+        df = None
+        for path in possible_paths:
+            if os.path.exists(path):
+                df = pd.read_csv(path)
+                break
+        
+        possible_json = [
+            "data/top_ingredientes_alacena.json",
+            "v2/data/top_ingredientes_alacena.json",
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "top_ingredientes_alacena.json")
+        ]
+        top_ings = []
+        for path in possible_json:
+            if os.path.exists(path):
+                with open(path) as f:
+                    top_ings = json.load(f)
+                break
+        
         return df, top_ings
-    except Exception:
+    except Exception as e:
         return None, []
 
 recipes_df, top_ingredientes = load_data()
@@ -148,7 +169,7 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 
 # ── UI ────────────────────────────────────────────────────────────────────────
 st.markdown('<div class="hero-title">CocinaAI 🌮</div>', unsafe_allow_html=True)
-st.markdown('<div class="hero-sub">Tu chef de alacena. Dime qué tienes y qué tanta energía tienes — yo me encargo del resto.</div>', unsafe_allow_html=True)
+st.markdown('<div class="hero-sub">Tu chef de alacena. Dime qué ingredientes tienes y qué tanta energía tienes — yo me encargo del resto.</div>', unsafe_allow_html=True)
 
 if not st.session_state.onboarding_done:
 
