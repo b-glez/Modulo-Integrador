@@ -1,0 +1,257 @@
+import streamlit as st
+import os
+import json
+import pandas as pd
+import numpy as np
+from openai import OpenAI
+
+st.set_page_config(page_title="CocinaAI — Tu chef de alacena", page_icon="🌮", layout="centered")
+
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap');
+html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
+.stApp { background-color: #FDF6EE; }
+#MainMenu, header, footer { visibility: hidden; }
+.hero-title { font-family: 'Playfair Display', serif; font-size: 2.4rem; font-weight: 700; color: #1C1208; margin-bottom: 0.15rem; }
+.hero-sub { font-size: 0.95rem; color: #7A6550; margin-bottom: 1.5rem; font-weight: 300; }
+.step-label { font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: #B5722A; margin-bottom: 0.5rem; margin-top: 1rem; }
+.stButton > button { background-color: #B5722A !important; color: #FFF8F0 !important; border: none !important; border-radius: 10px !important; font-weight: 500 !important; }
+.stButton > button:hover { background-color: #9A5E1F !important; }
+[data-testid="stChatInputTextArea"] { background-color: #FFF8F0 !important; }
+</style>
+""", unsafe_allow_html=True)
+
+# ── Cargar datos del EDA ──────────────────────────────────────────────────────
+@st.cache_data
+def load_data():
+    try:
+        import os
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        df = pd.read_csv(os.path.join(BASE_DIR, "data", "recipes_df.csv"))
+        with open(os.path.join(BASE_DIR, "data", "top_ingredientes_alacena.json")) as f:
+            top_ings = json.load(f)
+        return df, top_ings
+    except Exception:
+        return None, []
+
+recipes_df, top_ingredientes = load_data()
+
+# ── Tool del EDA ──────────────────────────────────────────────────────────────
+def get_perfil_alacena(ingredientes_usuario: list) -> dict:
+    if recipes_df is None:
+        return {"error": "Dataset no disponible"}
+
+    user_set = set(i.lower().strip() for i in ingredientes_usuario)
+    top_set = set(i.lower() for i in top_ingredientes)
+    en_alacena = list(user_set & top_set)
+
+    def calcular_match(ings_str):
+        if not isinstance(ings_str, str): return 0
+        ings = set(i.strip().lower() for i in ings_str.split(','))
+        return len(ings & user_set) / max(len(user_set), 1)
+
+    recipes_df['match_score'] = recipes_df['ingredientes'].apply(calcular_match)
+    top_recetas = recipes_df.nlargest(3, 'match_score')[
+        ['titulo', 'score_alacena', 'dificultad', 'tiempo_minutos', 'match_score']
+    ].to_dict('records')
+    score_promedio = recipes_df[recipes_df['match_score'] > 0]['score_alacena'].mean()
+
+    return {
+        "ingredientes_comunes_alacena_mexicana": en_alacena,
+        "pct_en_alacena_tipica": round(len(en_alacena) / max(len(user_set), 1) * 100),
+        "recetas_similares_en_dataset": top_recetas,
+        "score_alacena_promedio": round(score_promedio, 3) if not np.isnan(score_promedio) else 0,
+        "total_recetas_analizadas": len(recipes_df),
+    }
+
+# ── Configuración ─────────────────────────────────────────────────────────────
+MODOS_ENERGIA = {
+    "Con energía":      {"emoji": "⚡", "tiempo": 90, "desc": "Podemos hacer algo elaborado y especial."},
+    "Normal":           {"emoji": "😊", "tiempo": 45, "desc": "Algo rico sin complicarnos demasiado."},
+    "Cansada":          {"emoji": "😴", "tiempo": 25, "desc": "Fácil, máximo 3 pasos, que esté bueno."},
+    "Muerta de hambre": {"emoji": "🤤", "tiempo": 15, "desc": "Lo más rápido posible. Ya."},
+}
+MOMENTOS = {"Desayuno": "🌅", "Comida": "☀️", "Cena": "🌙", "Snack": "🍿"}
+
+# ── Session state ─────────────────────────────────────────────────────────────
+defaults = {
+    "onboarding_done": False, "modo_energia": "Normal",
+    "momento": "Comida", "messages": [], "ingredientes_frescos": "",
+    "perfil_data": None
+}
+for k, v in defaults.items():
+    if k not in st.session_state:
+        st.session_state[k] = v
+
+# ── System prompt ─────────────────────────────────────────────────────────────
+def build_system_prompt(perfil_data=None):
+    modo = MODOS_ENERGIA[st.session_state.modo_energia]
+
+    perfil_str = ""
+    if perfil_data and "error" not in perfil_data:
+        en_alacena = perfil_data.get("ingredientes_comunes_alacena_mexicana", [])
+        pct = perfil_data.get("pct_en_alacena_tipica", 0)
+        top_recetas = perfil_data.get("recetas_similares_en_dataset", [])
+        perfil_str = f"""
+ANÁLISIS DE DATOS (103 recetas mexicanas analizadas):
+- {pct}% de los ingredientes del usuario son típicos de cocinas mexicanas
+- Ingredientes reconocidos como típicos de alacena mexicana: {', '.join(en_alacena) if en_alacena else 'ninguno identificado'}
+- Score de aprovechamiento de alacena promedio para recetas similares: {perfil_data.get('score_alacena_promedio', 0)}
+- Usa este análisis para contextualizar y enriquecer tus recomendaciones."""
+
+    return f"""Eres CocinaAI, un chef experto y cálido en cocina mexicana tradicional y regional.
+Tu misión es resolver la carga cognitiva de cocinar: cuando alguien llega cansada, con prisa o con hambre y no sabe qué hacer con lo que tiene en casa.
+
+CONTEXTO DEL USUARIO:
+- Momento: {st.session_state.momento}
+- Estado: {st.session_state.modo_energia} — {modo['desc']}
+- Tiempo máximo sugerido: {modo['tiempo']} minutos
+- Ingredientes que mencionó: {st.session_state.ingredientes_frescos}
+{perfil_str}
+
+CÓMO RESPONDER:
+0. ANTES de sugerir, razona internamente:
+   - ¿Qué proteína tiene? Priorízala si hay una.
+   - ¿Qué combinaciones interesantes e inesperadas hay?
+   - Evita lo obvio — busca algo que sorprenda y que valga la pena cocinar.
+1. Sugiere 1 receta DESTACADA — la mejor opción para este momento y estado.
+2. Da 2 alternativas compactas (nombre, tiempo, por qué aplica).
+3. Usa los ingredientes mencionados como PUNTO DE PARTIDA, no como restricción.
+   Si falta algo común que probablemente tenga (ajo, sal, aceite, cebolla),
+   úsalo directamente. Si falta algo menos común, PREGUNTA si lo tiene.
+4. Máximo 1 pregunta de seguimiento por turno — y solo si es realmente necesaria.
+5. Sé preciso con tipos: harina de trigo ≠ masa de maíz. Si el tipo importa, pregunta.
+6. Asume que granos y legumbres están CRUDOS. Incluye el paso de cocción.
+7. Si el usuario menciona congelados, inclúyelos con su paso de descongelado.
+8. Menciona sutilmente si la receta es balanceada cuando aplique.
+9. Siempre incluye qué hacer con lo que sobre.
+10. Tono según estado:
+    - Con energía → entusiasta, propón algo especial
+    - Normal → cálido y práctico
+    - Cansada → directo, reconfortante, "te prometo que es fácil"
+    - Muerta de hambre → urgente y brevísimo, solo lo esencial
+
+REGLAS:
+- Solo cocina mexicana auténtica. Sin tex-mex ni fusión.
+- Siempre en español.
+- Cálido y conversacional, como un amigo chef de confianza.
+- Nunca la receta más obvia: si tiene pollo no sugieras pollo a la plancha,
+  si tiene frijoles no sugieras tacos de frijoles. Busca algo más interesante.
+- Si el usuario responde que no tiene un ingrediente, ajusta sin drama y sigue."""
+
+# ── API ───────────────────────────────────────────────────────────────────────
+OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY", ""))
+if not OPENAI_API_KEY:
+    st.error("Falta la OPENAI_API_KEY.")
+    st.stop()
+client = OpenAI(api_key=OPENAI_API_KEY)
+
+# ── UI ────────────────────────────────────────────────────────────────────────
+st.markdown('<div class="hero-title">CocinaAI 🌮</div>', unsafe_allow_html=True)
+st.markdown('<div class="hero-sub">Tu chef de alacena. Dime qué tienes y cómo estás — yo me encargo del resto.</div>', unsafe_allow_html=True)
+
+if not st.session_state.onboarding_done:
+
+    st.markdown('<div class="step-label">¿Qué estás preparando?</div>', unsafe_allow_html=True)
+    momento_sel = st.radio("momento",
+        options=[f"{emoji} {m}" for m, emoji in MOMENTOS.items()],
+        horizontal=True, label_visibility="collapsed", key="radio_momento")
+    st.session_state.momento = momento_sel.split(" ", 1)[1]
+
+    st.markdown('<div class="step-label">¿Cómo estás ahorita?</div>', unsafe_allow_html=True)
+    energia_sel = st.radio("energia",
+        options=[f"{info['emoji']} {modo}" for modo, info in MODOS_ENERGIA.items()],
+        horizontal=True, label_visibility="collapsed", key="radio_energia")
+    st.session_state.modo_energia = energia_sel.split(" ", 1)[1]
+
+    st.markdown('<div class="step-label">¿Qué tienes disponible?</div>', unsafe_allow_html=True)
+    st.caption("No te compliques — escribe lo que veas. El chat te preguntará si necesita saber algo más.")
+    ing_input = st.text_area("ing",
+        placeholder="ej. pollo, jitomate, cebolla, chile poblano, crema, arroz...",
+        height=80, label_visibility="collapsed")
+
+    if st.button("¡A cocinar! →", use_container_width=True):
+        if not ing_input.strip():
+            st.warning("Escribe al menos un ingrediente.")
+        else:
+            st.session_state.ingredientes_frescos = ing_input.strip()
+            st.session_state.onboarding_done = True
+
+            # Tool del EDA
+            user_ings = [i.strip() for i in ing_input.split(',')]
+            perfil = get_perfil_alacena(user_ings)
+            st.session_state.perfil_data = perfil
+
+            # Primer mensaje automático
+            momento_txt = st.session_state.momento.lower()
+            energia_txt = st.session_state.modo_energia.lower()
+            primer_msg = (
+                f"Hola! Preparo {momento_txt}, me siento {energia_txt}. "
+                f"Tengo: {ing_input.strip()}. ¿Qué me recomiendas?"
+            )
+            st.session_state.messages.append({"role": "user", "content": primer_msg})
+
+            with st.spinner("Pensando en algo rico para ti..."):
+                resp = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {"role": "system", "content": build_system_prompt(perfil)},
+                        {"role": "user", "content": primer_msg}
+                    ],
+                    temperature=0.8
+                )
+                reply = resp.choices[0].message.content
+                st.session_state.messages.append({"role": "assistant", "content": reply})
+
+            st.rerun()
+
+else:
+    # Sidebar
+    with st.sidebar:
+        st.markdown("### Tu sesión")
+        st.markdown(f"**{MOMENTOS[st.session_state.momento]} {st.session_state.momento}**")
+        st.markdown(f"**{MODOS_ENERGIA[st.session_state.modo_energia]['emoji']} {st.session_state.modo_energia}**")
+        st.markdown(f"*{st.session_state.ingredientes_frescos}*")
+
+        if st.session_state.perfil_data and "error" not in st.session_state.perfil_data:
+            p = st.session_state.perfil_data
+            st.divider()
+            st.markdown("### 📊 Análisis de alacena")
+            st.markdown(f"**{p['pct_en_alacena_tipica']}%** de tus ingredientes son típicos de cocinas mexicanas")
+            if p['ingredientes_comunes_alacena_mexicana']:
+                st.markdown("**Reconocidos como típicos:**")
+                for ing in p['ingredientes_comunes_alacena_mexicana']:
+                    st.markdown(f"✓ {ing}")
+            if p['recetas_similares_en_dataset']:
+                st.markdown("**Recetas similares encontradas:**")
+                for r in p['recetas_similares_en_dataset'][:2]:
+                    st.markdown(f"• {r['dificultad']} · {int(r['tiempo_minutos'])} min · aprovechamiento {r['score_alacena']:.0%}")
+            st.caption(f"*Análisis sobre {p['total_recetas_analizadas']} recetas mexicanas*")
+
+        st.divider()
+        if st.button("🔄 Nueva consulta", use_container_width=True):
+            for k, v in defaults.items():
+                st.session_state[k] = v
+            st.rerun()
+
+    # Chat
+    for i, msg in enumerate(st.session_state.messages):
+        if i == 0:
+            continue
+        with st.chat_message(msg["role"], avatar="🌮" if msg["role"] == "assistant" else "🧑‍🍳"):
+            st.markdown(msg["content"])
+
+    if prompt := st.chat_input("Responde, pregunta o pide algo diferente..."):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user", avatar="🧑‍🍳"):
+            st.markdown(prompt)
+        with st.chat_message("assistant", avatar="🌮"):
+            with st.spinner(""):
+                all_msgs = [{"role": "system", "content": build_system_prompt(st.session_state.perfil_data)}] + st.session_state.messages
+                resp = client.chat.completions.create(
+                    model="gpt-4o-mini", messages=all_msgs, temperature=0.8
+                )
+                reply = resp.choices[0].message.content
+                st.markdown(reply)
+        st.session_state.messages.append({"role": "assistant", "content": reply})
