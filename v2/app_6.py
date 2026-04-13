@@ -87,6 +87,11 @@ for k, v in defaults.items():
 # ── System prompt ─────────────────────────────────────────────────────────────
 def build_system_prompt(perfil_data=None):
     modo = MODOS_ENERGIA[st.session_state.modo_energia]
+    momento = st.session_state.momento
+    energia = st.session_state.modo_energia
+    tiempo = modo['tiempo']
+    desc = modo['desc']
+    ingredientes = st.session_state.ingredientes_frescos
 
     perfil_str = ""
     if perfil_data and "error" not in perfil_data:
