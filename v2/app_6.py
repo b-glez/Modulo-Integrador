@@ -149,7 +149,7 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 
 # ── UI ────────────────────────────────────────────────────────────────────────
 st.markdown('<div class="hero-title">CocinaAI 🌮</div>', unsafe_allow_html=True)
-st.markdown('<div class="hero-sub">Tu chef de alacena. Dime qué tienes y cómo estás — yo me encargo del resto.</div>', unsafe_allow_html=True)
+st.markdown('<div class="hero-sub">Tu chef de alacena. Dime qué tienes y qué tanta energía tienes — yo me encargo del resto.</div>', unsafe_allow_html=True)
 
 if not st.session_state.onboarding_done:
 
