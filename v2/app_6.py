@@ -19,6 +19,25 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 .stButton > button { background-color: #B5722A !important; color: #FFF8F0 !important; border: none !important; border-radius: 10px !important; font-weight: 500 !important; }
 .stButton > button:hover { background-color: #9A5E1F !important; }
 [data-testid="stChatInputTextArea"] { background-color: #FFF8F0 !important; }
+div[role="radiogroup"] {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+}
+div[role="radiogroup"] label {
+    font-size: 0.95rem !important;
+    padding: 6px 8px !important;
+    background: #FFFAF4;
+    border-radius: 8px;
+    border: 0.5px solid #E8D5B7;
+}
+@media (min-width: 600px) {
+    div[role="radiogroup"] {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+    }
+}
+</style>
 </style>
 """, unsafe_allow_html=True)
 
@@ -173,7 +192,7 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 
 # ── UI ────────────────────────────────────────────────────────────────────────
 st.markdown('<div class="hero-title">CocinaAI 🌮</div>', unsafe_allow_html=True)
-st.markdown('<div class="hero-sub">Tu chef de alacena. Dime qué tienes y cómo estás — yo me encargo del resto.</div>', unsafe_allow_html=True)
+st.markdown('<div class="hero-sub">Tu chef de alacena. Dime qué tienes y qué tanta energía tienes — yo me encargo del resto.</div>', unsafe_allow_html=True)
 
 if not st.session_state.onboarding_done:
 
