@@ -211,7 +211,7 @@ if not st.session_state.onboarding_done:
     st.session_state.modo_energia = energia_sel.split(" ", 1)[1]
 
     st.markdown('<div class="step-label">¿Qué tienes disponible?</div>', unsafe_allow_html=True)
-    st.caption("No te compliques — escribe lo que veas. El chat te preguntará si necesita saber algo más.")
+    st.caption("No te compliques — escribe lo que veas en tu alacena. El chat te preguntará si necesita saber algo más.")
     ing_input = st.text_area("ing",
         placeholder="ej. pollo, jitomate, cebolla, chile poblano, crema, arroz...",
         height=80, label_visibility="collapsed")
