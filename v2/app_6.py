@@ -201,13 +201,13 @@ if not st.session_state.onboarding_done:
     st.markdown('<div class="step-label">¿Qué estás preparando?</div>', unsafe_allow_html=True)
     momento_sel = st.radio("momento",
         options=[f"{emoji} {m}" for m, emoji in MOMENTOS.items()],
-        horizontal=True, label_visibility="collapsed", key="radio_momento")
+        label_visibility="collapsed", key="radio_momento")
     st.session_state.momento = momento_sel.split(" ", 1)[1]
 
     st.markdown('<div class="step-label">¿Cómo estás ahorita?</div>', unsafe_allow_html=True)
     energia_sel = st.radio("energia",
         options=[f"{info['emoji']} {modo}" for modo, info in MODOS_ENERGIA.items()],
-        horizontal=True, label_visibility="collapsed", key="radio_energia")
+        label_visibility="collapsed", key="radio_energia")
     st.session_state.modo_energia = energia_sel.split(" ", 1)[1]
 
     st.markdown('<div class="step-label">¿Qué tienes disponible?</div>', unsafe_allow_html=True)
