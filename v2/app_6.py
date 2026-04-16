@@ -30,6 +30,8 @@ div[role="radiogroup"] label {
     background: #FFFAF4;
     border-radius: 8px;
     border: 0.5px solid #E8D5B7;
+    color: #1C1208 !important;
+    -webkit-text-fill-color: #1C1208 !important;
 }
 @media (min-width: 600px) {
     div[role="radiogroup"] {
